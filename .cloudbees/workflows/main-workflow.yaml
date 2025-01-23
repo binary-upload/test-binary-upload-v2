@@ -100,4 +100,3 @@ jobs:
           format: MARKDOWN
     needs:
       - build-container-image
-      - scan
