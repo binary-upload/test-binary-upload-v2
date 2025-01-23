@@ -73,30 +73,3 @@ jobs:
             Deployed hackers-organized:${{ cloudbees.scm.sha }}
           format: MARKDOWN
     needs: test
-  deploy:
-    environment: DOW Production
-    steps:
-      - name: Checkout
-        uses: cloudbees-io/checkout@v1
-      - uses: cashokannamalai/kubeconfig@v1
-        name: Set kubeconfig
-        with:
-          secname: ${{ secrets.kubeconfig }}
-      - uses: cloudbees-io/kustomize-deploy@v1
-        name: Deploy to cluster
-        kind: deploy
-        with:
-          kustomization-base-dir: ${{ cloudbees.workspace }}/k8s/base
-          kustomization-overlays-dir: ${{ cloudbees.workspace }}/k8s/overlays/prod
-          environment-variables: "{}"
-      - name: Publish evidence
-        uses: cloudbees-io/publish-evidence-item@v1
-        with:
-          content: |-
-            ## Deployed environment
-            [Production frontend](https://hackers-organized-prod.preview.cb-demos.io/)
-
-            Running hackers-organized:${{ cloudbees.scm.sha }}
-          format: MARKDOWN
-    needs:
-      - build-container-image
