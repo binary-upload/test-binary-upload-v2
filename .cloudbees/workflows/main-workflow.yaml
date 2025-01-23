@@ -40,10 +40,17 @@ jobs:
           format: MARKDOWN
   build-container-image:
     steps:
-      - uses: cloudbees-io/checkout@v1
-        name: Get source code
-        kind: build
-        continue-on-error: true
+      - name: Get source code
+        uses: cloudbees-io/checkout@v1
+      - name: Setup git credentials
+        uses: cloudbees-io/configure-git-global-credentials@v1
+      - name: Login to AWS
+        uses: cloudbees-io/configure-aws-credentials@v1
+        id: aws-login
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ vars.oidc_staging_iam_role }}
+          role-duration-seconds: "3600" # optionally set the duration of the login token
       - name: Configure container registry for AWS ECR
         uses: cloudbees-io/configure-ecr-credentials@v1
       - id: build-container
@@ -54,22 +61,11 @@ jobs:
           destination: 020229604682.dkr.ecr.us-east-1.amazonaws.com/actions/assets-findsecbugs-scanner:qe-bdgolang
           tar-path: container-image.tar
           build-args: USER=cbp,TOKEN=${{ secrets.GH_SECURITY_PAT }}
-      - uses: calculi-corp/assets-plugin-chain-utils/upload-binary@v1
-        name: Upload binary from container build
-        continue-on-error: true
-        id: upload-binary
+      - id: upload-binary
+        name: Upload binary using action
+        uses: calculi-corp/assets-plugin-chain-utils/upload-binary@v1
         with:
           file-path: container-image.tar
           file-type: BINARY_CONTAINER
           debug: "true"
-      - name: Publish evidence
-        uses: cloudbees-io/publish-evidence-item@v1
-        with:
-          content: |-
-            ## Built and pushed image to docker hub
 
-            [Docker Hub](https://hub.docker.com/repository/docker/ldonleycb/hackers-organized/tags)
-
-            Deployed hackers-organized:${{ cloudbees.scm.sha }}
-          format: MARKDOWN
-    needs: test
