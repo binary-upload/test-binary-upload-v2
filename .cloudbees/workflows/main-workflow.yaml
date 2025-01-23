@@ -73,29 +73,6 @@ jobs:
             Deployed hackers-organized:${{ cloudbees.scm.sha }}
           format: MARKDOWN
     needs: test
-  scan:
-    outputs:
-      BLOCKER_COUNT: ${{ steps.FetchSonarQubeIssues.outputs.BLOCKER_COUNT }}
-      CRITICAL_COUNT: ${{ steps.FetchSonarQubeIssues.outputs.CRITICAL_COUNT }}
-      MAJOR_COUNT: ${{ steps.FetchSonarQubeIssues.outputs.MAJOR_COUNT }}
-      MINOR_COUNT: ${{ steps.FetchSonarQubeIssues.outputs.MINOR_COUNT }}
-    steps:
-      - name: Checkout
-        uses: cloudbees-io/checkout@v1
-      - name: Get code coverage
-        kind: test
-        uses: docker://node:lts
-        run: |
-          npm ci
-          npm run test:coverage
-      - uses: cloudbees-io/sonarqube-bundled-sast-scan-code@v1
-        name: Scan with SonarQube
-        kind: scan
-        continue-on-error: true
-        with:
-          language: LANGUAGE_JS
-          cover-file-name: coverage/clover.xml
-          sonar-exclusion: tests/*
   deploy:
     environment: DOW Production
     steps:
