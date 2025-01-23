@@ -96,51 +96,6 @@ jobs:
           language: LANGUAGE_JS
           cover-file-name: coverage/clover.xml
           sonar-exclusion: tests/*
-      - uses: cloudbees-io/snyk-sast-scan-code@v1
-        name: Synk SAST
-        kind: scan
-        continue-on-error: true
-        with:
-          orgname: ${{ secrets.SNYK_ORGNAME }}
-          token: ${{ secrets.SNYK_TOKEN }}
-          language: LANGUAGE_JS
-      - name: Scan with Snyk SCA
-        uses: cloudbees-io/snyk-sca-scan-dependency@v1
-        continue-on-error: true
-        with:
-          orgname: ${{ secrets.SNYK_ORGNAME }}
-          token: ${{ secrets.SNYK_TOKEN }}
-          language: LANGUAGE_JS
-      - name: Fetch SonarQube Issues
-        id: FetchSonarQubeIssues
-        uses: docker://alpine/git:latest
-        run: |
-          apk add --no-cache curl jq
-          curl -u ${{ secrets.SONAR_USER }}:${{ secrets.SONAR_TOKEN }} \
-          "https://sonarqube.cb-demos.io/api/issues/search?componentKeys=HackersOrganized&severities=BLOCKER,CRITICAL,MAJOR,MINOR" \
-          -o sonar-issues.json
-          BLOCKER_COUNT=$(jq '[.issues[] | select(.severity=="BLOCKER")] | length' sonar-issues.json)
-          CRITICAL_COUNT=$(jq '[.issues[] | select(.severity=="CRITICAL")] | length' sonar-issues.json)
-          MAJOR_COUNT=$(jq '[.issues[] | select(.severity=="MAJOR")] | length' sonar-issues.json)
-          MINOR_COUNT=$(jq '[.issues[] | select(.severity=="MINOR")] | length' sonar-issues.json)
-
-          echo "${BLOCKER_COUNT}" >> $CLOUDBEES_OUTPUTS/BLOCKER_COUNT
-          echo "${CRITICAL_COUNT}" >> $CLOUDBEES_OUTPUTS/CRITICAL_COUNT
-          echo "${MAJOR_COUNT}" >> $CLOUDBEES_OUTPUTS/MAJOR_COUNT
-          echo "${MINOR_COUNT}" >> $CLOUDBEES_OUTPUTS/MINOR_COUNT
-      - name: Publish evidence
-        uses: cloudbees-io/publish-evidence-item@v1
-        with:
-          content: |-
-            ## SonarQube Analysis Results
-
-            | Severity             | Issue Count |
-            |----------------------|-------------|
-            | BLOCKER_COUNT        | ${{ steps.FetchSonarQubeIssues.outputs.BLOCKER_COUNT }} |
-            | CRITICAL_COUNT       | ${{ steps.FetchSonarQubeIssues.outputs.CRITICAL_COUNT }} |
-            | MAJOR_COUNT          | ${{ steps.FetchSonarQubeIssues.outputs.MAJOR_COUNT }} |
-            | MINOR_COUNT          | ${{ steps.FetchSonarQubeIssues.outputs.MINOR_COUNT }} |
-          format: MARKDOWN
   deploy:
     environment: DOW Production
     steps:
